@@ -1,0 +1,367 @@
+@import 'tailwindcss';
+
+/* Tokens und Basisstile 1:1 aus der Konta-App (src/routes/layout.css),
+   damit Dashboard und App gleich aussehen. Änderungen dort hier nachziehen. */
+
+/* latin-ext italic */
+@font-face {
+	font-family: 'Albert Sans';
+	font-style: italic;
+	font-weight: 400;
+	font-display: swap;
+	src: url('/fonts/albert-sans-italic-latin-ext.woff2') format('woff2');
+	unicode-range:
+		U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+		U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+		U+A720-A7FF;
+}
+
+/* latin italic */
+@font-face {
+	font-family: 'Albert Sans';
+	font-style: italic;
+	font-weight: 400;
+	font-display: swap;
+	src: url('/fonts/albert-sans-italic-latin.woff2') format('woff2');
+	unicode-range:
+		U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+		U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* latin-ext */
+@font-face {
+	font-family: 'Albert Sans';
+	font-style: normal;
+	font-weight: 400 600;
+	font-display: swap;
+	src: url('/fonts/albert-sans-latin-ext.woff2') format('woff2');
+	unicode-range:
+		U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+		U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+		U+A720-A7FF;
+}
+
+/* latin */
+@font-face {
+	font-family: 'Albert Sans';
+	font-style: normal;
+	font-weight: 400 600;
+	font-display: swap;
+	src: url('/fonts/albert-sans-latin.woff2') format('woff2');
+	unicode-range:
+		U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+		U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+	/* Brand core (siehe docs/design/konta-styleguide.md, Abschnitt 3). */
+	--green: #a4f06a;
+	--ink: #0d0d0d;
+	--paper: #f8f5f2;
+
+	/* Akzent Grün: Fläche, Hover und Press des Primär-Buttons */
+	--green-600: #8ee052;
+	--green-700: #78cc3c;
+
+	/* Akzent Violett: Flieder-Flächen bis Dunkelviolett für Textakzente */
+	--violet-700: #5b2da8;
+	--violet-300: #c9b8f0;
+	--violet-200: #e6dcf8;
+	--violet-100: #f1ebfb;
+	--violet-50: #f8f5fd;
+
+	/* Ink neutrals (warm, nie bläulich) */
+	--ink-900: #0d0d0d;
+	--ink-700: #333333;
+	--ink-500: #615e5c;
+	--ink-400: #8f8b88;
+	--ink-300: #c0bcb9;
+	--ink-200: #e8e4e0;
+	--ink-100: #f2efec;
+
+	/* Dunkle Flächen */
+	--ink-deep: #1a1a1a;
+	--ink-line: #2a2a2a;
+	--ink-muted: #b8b4b1;
+
+	/* Warm neutrals */
+	--white: #ffffff;
+	--sand: #f0ece8;
+
+	/* Functional: Rot nur für Überfälliges und echte Fehler. Es gibt bewusst
+	   keine Erfolgs-, Gelb- oder Blaufarbe (Status siehe Styleguide 3.4). */
+	--error: #c2410c;
+	--error-bg: #fdebe3;
+
+	/* RGB-Kanäle für Schatten und Verläufe: `rgb(var(--ink-rgb) / .08)` */
+	--green-rgb: 164 240 106;
+	--violet-700-rgb: 91 45 168;
+	--violet-300-rgb: 201 184 240;
+	--violet-200-rgb: 230 220 248;
+	--violet-100-rgb: 241 235 251;
+	--ink-rgb: 13 13 13;
+	--paper-rgb: 248 245 242;
+	--hero-tr-rgb: 183 155 230;
+	--hero-bl-rgb: 243 181 208;
+
+	/* Semantic aliases */
+	--surface-page: var(--paper);
+	--surface-card: var(--white);
+	--surface-brand: var(--green);
+	--surface-soft: var(--violet-100);
+	--surface-inverse: var(--ink);
+	--text-primary: var(--ink);
+	--text-secondary: var(--ink-700);
+	--text-muted: var(--ink-400);
+	--text-on-green: var(--ink);
+	--text-on-ink: var(--paper);
+	--text-on-ink-muted: var(--ink-muted);
+	--border-default: var(--ink-200);
+	--border-strong: var(--ink);
+	--focus-ring: 0 0 0 3px var(--violet-300);
+	--focus-ring-error: 0 0 0 3px var(--error-bg);
+
+	/* Bewegung: eine Kurve für alles, Toggle mit leichtem Überschwingen */
+	--ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+	--ease-toggle: cubic-bezier(0.3, 1.3, 0.5, 1);
+
+	/* Verläufe (Styleguide 7): weiche Radial-Flecken, nie linear.
+	   hero: Seitenkopf mit weißem Fleck unten.
+	   soft: Unterseiten-Variante, Fleck unten in `paper`.
+	   bold: CTA-Karte, Grün mit Flieder-Glow oben rechts. */
+	--mesh-hero:
+		radial-gradient(60% 64% at 12% 8%, #f1ebfb 0%, rgb(241 235 251 / 0) 60%),
+		radial-gradient(
+			44% 48% at 90% 12%,
+			rgb(var(--hero-tr-rgb) / 0.7) 0%,
+			rgb(var(--hero-tr-rgb) / 0) 72%
+		),
+		radial-gradient(64% 62% at 54% 98%, #ffffff 0%, rgb(255 255 255 / 0) 60%),
+		radial-gradient(
+			48% 52% at 22% 66%,
+			rgb(var(--hero-bl-rgb) / 0.6) 0%,
+			rgb(var(--hero-bl-rgb) / 0) 66%
+		),
+		var(--paper);
+	--mesh-soft:
+		radial-gradient(60% 64% at 12% 8%, #f1ebfb 0%, rgb(241 235 251 / 0) 60%),
+		radial-gradient(
+			44% 48% at 90% 12%,
+			rgb(var(--hero-tr-rgb) / 0.7) 0%,
+			rgb(var(--hero-tr-rgb) / 0) 72%
+		),
+		radial-gradient(60% 60% at 52% 96%, #f8f5f2 0%, rgb(248 245 242 / 0) 60%),
+		radial-gradient(
+			48% 52% at 22% 66%,
+			rgb(var(--hero-bl-rgb) / 0.6) 0%,
+			rgb(var(--hero-bl-rgb) / 0) 66%
+		),
+		var(--paper);
+	--mesh-bold:
+		radial-gradient(70% 70% at 85% 0%, #e6dcf8 0%, rgb(230 220 248 / 0) 70%), var(--green);
+
+	/* Typography */
+	--font-sans: 'Albert Sans', ui-sans-serif, system-ui, sans-serif;
+	--text-display: 600 56px/1.05 var(--font-sans);
+	--text-h1: 600 40px/1.1 var(--font-sans);
+	--text-h2: 600 28px/1.2 var(--font-sans);
+	--text-h3: 600 20px/1.3 var(--font-sans);
+	--text-body-lg: 400 18px/1.55 var(--font-sans);
+	--text-body: 400 16px/1.5 var(--font-sans);
+	--text-small: 400 14px/1.45 var(--font-sans);
+	--text-caption: 500 12.5px/1.4 var(--font-sans);
+	--text-label: 600 11px/1.2 var(--font-sans);
+	--text-amount: 600 24px/1.2 var(--font-sans);
+	--tracking-tight: -0.02em;
+	--tracking-label: 0.08em;
+
+	/* Spacing (4px base) */
+	--space-1: 4px;
+	--space-2: 8px;
+	--space-3: 12px;
+	--space-4: 16px;
+	--space-5: 24px;
+	--space-6: 32px;
+	--space-7: 48px;
+	--space-8: 64px;
+	--space-9: 96px;
+
+	/* Radii */
+	--radius-sm: 6px;
+	--radius-md: 10px;
+	--radius-lg: 16px;
+	--radius-xl: 24px;
+	--radius-full: 999px;
+
+	/* Shadows */
+	--shadow-card: 0 1px 2px rgb(13 13 13 / 0.05), 0 4px 16px rgb(13 13 13 / 0.05);
+	--shadow-pop: 0 4px 12px rgb(13 13 13 / 0.08), 0 12px 32px rgb(13 13 13 / 0.1);
+	--shadow-raised: 0 2px 6px rgb(13 13 13 / 0.05), 0 16px 40px rgb(13 13 13 / 0.08);
+	--shadow-hover: 0 2px 6px rgb(13 13 13 / 0.05), 0 20px 40px rgb(13 13 13 / 0.12);
+	--shadow-dropdown: 0 2px 6px rgb(13 13 13 / 0.05), 0 20px 48px rgb(13 13 13 / 0.14);
+	--shadow-pill: 0 2px 6px rgb(13 13 13 / 0.06), 0 10px 24px rgb(13 13 13 / 0.07);
+	/* Ausgewähltes Segment in einer grauen Schalterleiste. */
+	--shadow-segment: 0 1px 2px rgb(13 13 13 / 0.08);
+
+	/* Layout */
+	--container-max: 1200px;
+	--grid-gutter: 24px;
+	--control-h: 44px;
+	--control-h-sm: 36px;
+	--control-h-lg: 56px;
+}
+
+@theme {
+	--font-sans: 'Albert Sans', ui-sans-serif, system-ui, sans-serif;
+
+	/* Tailwinds eigene Grün- und Violett-Skalen raus, damit nur unsere
+	   Stufen existieren und z. B. `green-400` gar keine Klasse erzeugt. */
+	--color-green-*: initial;
+	--color-violet-*: initial;
+
+	--color-green: #a4f06a;
+	--color-green-600: #8ee052;
+	--color-green-700: #78cc3c;
+
+	--color-violet-50: #f8f5fd;
+	--color-violet-100: #f1ebfb;
+	--color-violet-200: #e6dcf8;
+	--color-violet-300: #c9b8f0;
+	--color-violet-700: #5b2da8;
+
+	--color-ink: #0d0d0d;
+	--color-ink-100: #f2efec;
+	--color-ink-200: #e8e4e0;
+	--color-ink-300: #c0bcb9;
+	--color-ink-400: #8f8b88;
+	--color-ink-500: #615e5c;
+	--color-ink-700: #333333;
+	--color-ink-900: #0d0d0d;
+	--color-ink-deep: #1a1a1a;
+	--color-ink-line: #2a2a2a;
+	--color-ink-muted: #b8b4b1;
+
+	--color-paper: #f8f5f2;
+	--color-sand: #f0ece8;
+	--color-white: #ffffff;
+
+	--color-error: #c2410c;
+	--color-error-bg: #fdebe3;
+
+	--radius-sm: 6px;
+	--radius-md: 10px;
+	--radius-lg: 16px;
+	--radius-xl: 24px;
+	--radius-full: 999px;
+
+	--shadow-card: 0 1px 2px rgb(13 13 13 / 0.05), 0 4px 16px rgb(13 13 13 / 0.05);
+	--shadow-pop: 0 4px 12px rgb(13 13 13 / 0.08), 0 12px 32px rgb(13 13 13 / 0.1);
+	--shadow-raised: 0 2px 6px rgb(13 13 13 / 0.05), 0 16px 40px rgb(13 13 13 / 0.08);
+	--shadow-hover: 0 2px 6px rgb(13 13 13 / 0.05), 0 20px 40px rgb(13 13 13 / 0.12);
+	--shadow-dropdown: 0 2px 6px rgb(13 13 13 / 0.05), 0 20px 48px rgb(13 13 13 / 0.14);
+	--shadow-pill: 0 2px 6px rgb(13 13 13 / 0.06), 0 10px 24px rgb(13 13 13 / 0.07);
+	/* Ausgewähltes Segment in einer grauen Schalterleiste. */
+	--shadow-segment: 0 1px 2px rgb(13 13 13 / 0.08);
+
+	--ease-konta: cubic-bezier(0.2, 0.7, 0.2, 1);
+	--ease-toggle: cubic-bezier(0.3, 1.3, 0.5, 1);
+
+	--spacing-control: 44px;
+	--spacing-control-sm: 36px;
+	--spacing-control-lg: 56px;
+}
+
+@layer base {
+	body {
+		font: var(--text-body);
+		color: var(--text-primary);
+		background: var(--surface-page);
+		font-feature-settings: normal;
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+	}
+
+	::selection {
+		background: var(--ink);
+		color: var(--green);
+	}
+
+	button:not(:disabled),
+	[role='button']:not([aria-disabled='true']) {
+		cursor: pointer;
+	}
+
+	button:disabled,
+	[role='button'][aria-disabled='true'] {
+		cursor: not-allowed;
+	}
+
+	h1,
+	h2,
+	h3 {
+		margin: 0;
+		color: var(--text-primary);
+		text-wrap: balance;
+	}
+
+	h1 {
+		font: var(--text-h1);
+		letter-spacing: var(--tracking-tight);
+	}
+
+	h2 {
+		font: var(--text-h2);
+		letter-spacing: -0.015em;
+	}
+
+	h3 {
+		font: var(--text-h3);
+	}
+}
+
+@layer utilities {
+	.tnum {
+		font-variant-numeric: tabular-nums;
+	}
+
+	.text-label {
+		font: var(--text-label);
+		letter-spacing: var(--tracking-label);
+		text-transform: uppercase;
+	}
+
+	.text-amount {
+		font: var(--text-amount);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.focus-ring:focus-visible {
+		outline: none;
+		box-shadow: var(--focus-ring);
+	}
+
+	.h-control {
+		height: var(--control-h);
+	}
+
+	.h-control-sm {
+		height: var(--control-h-sm);
+	}
+
+	.h-control-lg {
+		height: var(--control-h-lg);
+	}
+}
+
+/* Verläufe als echte Utilities, damit `!`-Präfix und Varianten funktionieren. */
+@utility bg-mesh-hero {
+	background: var(--mesh-hero);
+}
+
+@utility bg-mesh-soft {
+	background: var(--mesh-soft);
+}
+
+@utility bg-mesh-bold {
+	background: var(--mesh-bold);
+}
