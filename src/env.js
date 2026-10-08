@@ -82,7 +82,8 @@ export const variables = defineEnvVars({
 		schema: optional
 	},
 	OPENPANEL_PROJECT_ID: {
-		description: 'Projekt-ID in OpenPanel (steht in der Projekt-URL).',
+		description:
+			'Optional: Projekt-ID in OpenPanel. Nur für einen root-Client nötig, ein read-Client gehört schon zu einem Projekt.',
 		schema: optional
 	},
 	OPENPANEL_DASHBOARD_URL: {

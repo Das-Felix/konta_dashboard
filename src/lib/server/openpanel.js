@@ -8,7 +8,9 @@
  *
  * Authentifizierung über die Header `openpanel-client-id` und
  * `openpanel-client-secret`. Der Client braucht Leserechte (Modus "read"
- * oder "root"); der Tracking-Client der App ("write") reicht nicht.
+ * oder "root"); der Tracking-Client der App ("write") reicht nicht. Ein
+ * read-Client gehört zu genau einem Projekt, die API nimmt dann dessen ID.
+ * `OPENPANEL_PROJECT_ID` braucht es nur für einen root-Client.
  *
  * Alle Funktionen werfen nie, sondern liefern `{ ok: false, error }`, damit
  * eine Seite ohne OpenPanel trotzdem lädt. Antworten werden kurz zwischen-
@@ -64,7 +66,7 @@ const cache = new Map();
 
 /** @returns {boolean} */
 export function isOpenPanelConfigured() {
-	return Boolean(OPENPANEL_CLIENT_ID && OPENPANEL_CLIENT_SECRET && OPENPANEL_PROJECT_ID);
+	return Boolean(OPENPANEL_CLIENT_ID && OPENPANEL_CLIENT_SECRET);
 }
 
 /**
@@ -87,7 +89,7 @@ async function request(path, params) {
 	if (!isOpenPanelConfigured()) return { ok: false, error: 'not_configured' };
 
 	const search = new URLSearchParams();
-	search.set('projectId', /** @type {string} */ (OPENPANEL_PROJECT_ID));
+	if (OPENPANEL_PROJECT_ID) search.set('projectId', OPENPANEL_PROJECT_ID);
 	for (const [key, value] of Object.entries(params)) {
 		if (value !== undefined && value !== '') search.set(key, String(value));
 	}
@@ -249,15 +251,15 @@ export async function getRecentEvents({ limit = 50, event } = {}) {
  * @returns {Promise<Result<ChartSeries[]>>}
  */
 export async function getChart({ events, days, breakdown }) {
-	const range = days <= 1 ? 'today' : days <= 7 ? '7d' : days <= 30 ? '30d' : '6m';
 	const result = await request('/export/charts', {
-		events: JSON.stringify(
+		series: JSON.stringify(
 			events.map((event) => ({ name: event.name, segment: event.segment ?? 'event', filters: [] }))
 		),
 		interval: 'day',
-		range,
+		// startDate und endDate überschreiben `range`. Ein reines Datum als
+		// endDate wäre Mitternacht und würde den heutigen Tag abschneiden.
 		startDate: isoDay(new Date(Date.now() - (days - 1) * 86_400_000)),
-		endDate: isoDay(new Date()),
+		endDate: new Date().toISOString(),
 		...(breakdown ? { breakdowns: JSON.stringify([{ name: breakdown }]) } : {})
 	});
 	if (!result.ok) return result;
