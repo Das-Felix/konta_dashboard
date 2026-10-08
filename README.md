@@ -67,8 +67,11 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO konta_dashbo
 
 Im OpenPanel-Projekt unter Einstellungen einen **eigenen Client im Modus
 „read“** anlegen (der Tracking-Client der App darf nur schreiben) und
-`OPENPANEL_CLIENT_ID`, `OPENPANEL_CLIENT_SECRET`, `OPENPANEL_PROJECT_ID`
-setzen. Optional `OPENPANEL_DASHBOARD_URL` für Direktlinks zu Profilen.
+`OPENPANEL_CLIENT_ID` und `OPENPANEL_CLIENT_SECRET` setzen. Ein read-Client
+gehört zu genau einem Projekt, `OPENPANEL_PROJECT_ID` braucht es daher nur bei
+einem root-Client (die ID steht in der Dashboard-URL:
+`https://dashboard.openpanel.dev/<org>/<projekt-id>`). Optional
+`OPENPANEL_DASHBOARD_URL` für Direktlinks zu Profilen.
 
 ### Lokale Demo-Daten
 

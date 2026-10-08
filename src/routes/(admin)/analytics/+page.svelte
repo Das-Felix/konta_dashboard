@@ -64,7 +64,7 @@
 	<Notice title="OpenPanel ist nicht verbunden.">
 		<p class="m-0 mt-1">
 			Leg im OpenPanel-Projekt unter Einstellungen einen eigenen Client im Modus „read“ an und setz
-			OPENPANEL_CLIENT_ID, OPENPANEL_CLIENT_SECRET und OPENPANEL_PROJECT_ID. Der Tracking-Client der
+			OPENPANEL_CLIENT_ID und OPENPANEL_CLIENT_SECRET. Der Tracking-Client der
 			App darf nur schreiben und reicht dafür nicht.
 		</p>
 	</Notice>
