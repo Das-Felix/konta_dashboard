@@ -6,8 +6,7 @@
  * (Argon2id) und 2FA-Secret kommen aus der Konta-Datenbank, damit gelten
  * dieselben Zugangsdaten und dieselbe 2FA wie in der App.
  *
- * Die Session liegt nur im Speicher dieses Prozesses. Das Cookie trägt ein
- * zufälliges Token, keinen Inhalt. Ein Neustart meldet alle ab. Bei jedem
+ * Die Session ist ein HMAC-signiertes Cookie ohne Serverzustand. Bei jedem
  * Request wird die Allowlist erneut geprüft: wer aus `ADMIN_EMAILS` fliegt,
  * ist sofort draußen.
  */
@@ -25,8 +24,8 @@ import { ADMIN_EMAILS, SESSION_SECRET, TWO_FACTOR_SECRET_KEY } from '$app/env/pr
 import { queryOne } from '#lib/server/db.js';
 
 export const SESSION_COOKIE = 'konta_admin';
-/** 30 Tage. Ein Neustart des Prozesses meldet vorher alle ab. */
-export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
+/** 14 Tage. */
+export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 14;
 const PENDING_MAX_AGE_SECONDS = 60 * 5;
 
 /**
@@ -123,30 +122,12 @@ export function isAdminEmail(email) {
 }
 
 /**
- * Sessions dieses Prozesses. Das Cookie speichert nur den Schlüssel.
- *
- * @type {Map<string, AdminSession>}
- */
-const sessions = new Map();
-
-/** Entfernt abgelaufene Einträge, damit die Map nicht mitwächst. */
-function pruneSessions() {
-	const now = Date.now();
-	for (const [token, session] of sessions) {
-		if (session.exp * 1000 < now) sessions.delete(token);
-	}
-}
-
-/**
  * @param {{ userId: string, email: string, name: string }} admin
  * @returns {string}
  */
 export function createSessionToken({ userId, email, name }) {
-	pruneSessions();
 	const exp = Math.floor(Date.now() / 1000) + SESSION_MAX_AGE_SECONDS;
-	const token = randomBytes(32).toString('base64url');
-	sessions.set(token, { userId, email, name, exp });
-	return token;
+	return seal({ kind: 'session', userId, email, name, exp });
 }
 
 /**
@@ -154,22 +135,9 @@ export function createSessionToken({ userId, email, name }) {
  * @returns {AdminSession | null}
  */
 export function readSessionToken(token) {
-	if (!token) return null;
-	const data = sessions.get(token);
-	if (!data) return null;
-	if (data.exp * 1000 < Date.now()) {
-		sessions.delete(token);
-		return null;
-	}
-	if (!isAdminEmail(data.email)) return null;
+	const data = unseal(token);
+	if (!data || data.kind !== 'session' || !isAdminEmail(String(data.email ?? ''))) return null;
 	return { userId: data.userId, email: data.email, name: data.name, exp: data.exp };
-}
-
-/**
- * @param {string | undefined} token
- */
-export function revokeSessionToken(token) {
-	if (token) sessions.delete(token);
 }
 
 /**

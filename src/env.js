@@ -44,8 +44,7 @@ export const variables = defineEnvVars({
 		}, '')
 	},
 	SESSION_SECRET: {
-		description:
-			'Signiert das kurzlebige Cookie zwischen Passwort und 2FA. Mindestens 32 Zeichen.',
+		description: 'Signiert das Admin-Session-Cookie. Mindestens 32 Zeichen.',
 		schema: required((value) => {
 			if (!value || value.length < 32) {
 				throw new Error('SESSION_SECRET fehlt oder ist kürzer als 32 Zeichen.');

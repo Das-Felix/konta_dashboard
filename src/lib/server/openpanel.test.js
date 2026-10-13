@@ -6,6 +6,8 @@ import {
 	normalizeEvent,
 	normalizeOverview,
 	parseTimestamp,
+	periodRange,
+	shiftDay,
 	summarizeProfile,
 	toPathname
 } from './openpanel.js';
@@ -138,6 +140,20 @@ describe('openpanel', () => {
 		expect(insightsRange(90, now)).toEqual({
 			startDate: '2026-07-13',
 			endDate: '2026-10-11 23:59:59'
+		});
+	});
+
+	it('rechnet feste Zeiträume in Wiener Kalendertagen', () => {
+		expect(shiftDay('2026-03-01', 1)).toBe('2026-02-28');
+		// 23:30 UTC ist in Wien schon der nächste Tag.
+		const now = new Date('2026-10-12T23:30:00Z');
+		expect(periodRange(1, 0, now)).toEqual({
+			startDate: '2026-10-13',
+			endDate: '2026-10-13 23:59:59'
+		});
+		expect(periodRange(7, 1, now)).toEqual({
+			startDate: '2026-09-30',
+			endDate: '2026-10-06 23:59:59'
 		});
 	});
 

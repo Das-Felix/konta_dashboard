@@ -42,9 +42,8 @@ Gestaltung nach dem Konta-Styleguide (Tokens 1:1 aus `konta_app/src/routes/layou
 Kein eigenes Benutzerkonto: Admins melden sich mit ihrem **Konta-Konto** an,
 wenn die E-Mail in `ADMIN_EMAILS` steht. Passwort (Argon2id) und 2FA (TOTP)
 werden gegen die Konta-Datenbank geprüft. Ist 2FA aktiv, braucht das Dashboard
-denselben `TWO_FACTOR_SECRET_KEY` wie die App. Die Session liegt im Speicher
-des Prozesses. Das Cookie enthält nur ein zufälliges Token (30 Tage, HttpOnly,
-Secure, SameSite=Strict). Ein Neustart meldet alle ab. Wer aus `ADMIN_EMAILS`
+denselben `TWO_FACTOR_SECRET_KEY` wie die App. Die Session ist ein signiertes
+Cookie (14 Tage, HttpOnly, Secure, SameSite=Strict). Wer aus `ADMIN_EMAILS`
 entfernt wird, verliert den Zugang sofort.
 
 ## Einrichtung

@@ -14,6 +14,7 @@ import { ACTIVITY_SOURCE, dailySeries } from './shared.js';
  * @property {number} signups7d
  * @property {number} signupsPrev7d
  * @property {number} activeToday
+ * @property {number} activeYesterday
  * @property {number} active7d
  * @property {number} active30d
  * @property {number} activePrev7d
@@ -50,6 +51,7 @@ export async function getOverviewKpis() {
 		queryOne(
 			`SELECT
 				count(DISTINCT "userId") FILTER (WHERE at >= ${viennaDayStart(0)}) AS today,
+				count(DISTINCT "userId") FILTER (WHERE at >= ${viennaDayStart(1)} AND at < ${viennaDayStart(0)}) AS yesterday,
 				count(DISTINCT "userId") FILTER (WHERE at >= ${viennaDayStart(6)}) AS last7,
 				count(DISTINCT "userId") FILTER (WHERE at >= ${viennaDayStart(13)} AND at < ${viennaDayStart(6)}) AS prev7,
 				count(DISTINCT "userId") FILTER (WHERE at >= ${viennaDayStart(29)}) AS last30
@@ -94,6 +96,7 @@ export async function getOverviewKpis() {
 		verifiedUsers: users?.verified ?? 0,
 		onboardedUsers: users?.onboarded ?? 0,
 		activeToday: activity?.today ?? 0,
+		activeYesterday: activity?.yesterday ?? 0,
 		active7d: activity?.last7 ?? 0,
 		activePrev7d: activity?.prev7 ?? 0,
 		active30d: activity?.last30 ?? 0,

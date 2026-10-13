@@ -33,6 +33,7 @@ import {
 	OPENPANEL_WEBSITE_CLIENT_SECRET,
 	OPENPANEL_WEBSITE_DASHBOARD_URL
 } from '$app/env/private';
+import { viennaDayKey } from '#lib/format.js';
 
 const TIMEOUT_MS = 8000;
 const CACHE_TTL_MS = 60_000;
@@ -315,6 +316,31 @@ export function insightsRange(days, now = new Date()) {
 }
 
 /**
+ * `YYYY-MM-DD`, um `days` Kalendertage zurückverschoben.
+ *
+ * @param {string} day
+ * @param {number} days
+ * @returns {string}
+ */
+export function shiftDay(day, days) {
+	const [year, month, date] = day.split('-').map(Number);
+	return new Date(Date.UTC(year, month - 1, date - days)).toISOString().slice(0, 10);
+}
+
+/**
+ * Fester Zeitraum aus `days` Wiener Kalendertagen bis einschließlich heute.
+ * `offset` 1 ist der gleich lange Zeitraum davor, für Vergleiche.
+ *
+ * @param {number} days
+ * @param {number} [offset]
+ * @returns {{ startDate: string, endDate: string }}
+ */
+export function periodRange(days, offset = 0, now = new Date()) {
+	const end = shiftDay(viennaDayKey(now), offset * days);
+	return { startDate: shiftDay(end, days - 1), endDate: `${end} 23:59:59` };
+}
+
+/**
  * @typedef {Object} OverviewPoint
  * @property {string} day erster Tag des Intervalls (bei langen Zeiträumen ein Monat)
  * @property {number} visitors
@@ -331,17 +357,18 @@ export function insightsRange(days, now = new Date()) {
 /**
  * Kennzahlen der OpenPanel-Übersicht.
  *
- * @param {number} days
+ * @param {number | { startDate: string, endDate: string }} range Tage wie im
+ *   OpenPanel-Dashboard (`insightsRange`) oder ein fester Zeitraum (`periodRange`)
  * @param {OpenPanelProject} [project]
  * @returns {Promise<Result<Overview>>}
  */
-export async function getOverview(days, project = APP) {
+export async function getOverview(range, project = APP) {
 	const projectId = await getProjectId(project);
 	if (!projectId.ok) return projectId;
 	const result = await request(
 		project,
 		`/insights/${encodeURIComponent(projectId.data)}/metrics`,
-		insightsRange(days)
+		typeof range === 'number' ? insightsRange(range) : range
 	);
 	if (!result.ok) return result;
 	return { ok: true, data: normalizeOverview(result.data) };

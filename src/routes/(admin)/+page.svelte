@@ -11,7 +11,9 @@
 	import Badge from '#lib/components/ui/Badge.svelte';
 	import Notice from '#lib/components/ui/Notice.svelte';
 	import LineChart from '#lib/components/charts/LineChart.svelte';
+	import ColumnChart from '#lib/components/charts/ColumnChart.svelte';
 	import Funnel from '#lib/components/charts/Funnel.svelte';
+	import RankedBars from '#lib/components/charts/RankedBars.svelte';
 	import ActivityList from '#lib/components/ActivityList.svelte';
 	import {
 		changeRatio,
@@ -19,7 +21,9 @@
 		formatDayLabel,
 		formatDayLong,
 		formatEuro,
+		formatMonth,
 		formatNumber,
+		formatPercent,
 		formatRelative
 	} from '#lib/format.js';
 	import { LEAD_SOURCE_LABELS, ONBOARDING_STEP_LABELS, labelOf } from '#lib/labels.js';
@@ -28,14 +32,18 @@
 	let { data } = $props();
 
 	const k = $derived(data.kpis);
+	const landingpageHref = $derived(resolve('/(admin)/landingpage'));
 
 	const rangeOptions = $derived(
 		[7, 30, 90].map((days) => ({
 			value: String(days),
 			label: `${days} Tage`,
-			href: resolve(`/(admin)?range=${days}`)
+			href: `${resolve('/(admin)')}?range=${days}`
 		}))
 	);
+
+	const onboarded = $derived(data.funnel.find((step) => step.key === 'onboarded')?.value ?? 0);
+	const registered = $derived(data.funnel.find((step) => step.key === 'registered')?.value ?? 0);
 
 	const alerts = $derived(
 		[
@@ -61,25 +69,50 @@
 			}
 		].filter((alert) => alert.value > 0)
 	);
+
+	/**
+	 * @param {number} signups
+	 * @param {number | null} visitors
+	 */
+	function conversion(signups, visitors) {
+		return visitors ? signups / visitors : null;
+	}
 </script>
 
 <svelte:head>
 	<title>Übersicht | Konta Admin</title>
 </svelte:head>
 
+{#snippet visitorsFallback(/** @type {string} */ label, /** @type {string} */ hint)}
+	<StatCard {label} value="—" {hint} href={landingpageHref} />
+{/snippet}
+
 <PageHeader eyebrow={formatDate(new Date())} title="Übersicht." />
 
-<section class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Kennzahlen">
+<h2 class="text-label m-0 mb-3 text-ink-500">Heute</h2>
+<section class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Heute">
+	{#if !data.website}
+		{@render visitorsFallback('Besucher Landingpage', 'Landingpage nicht verbunden')}
+	{:else}
+		{#await data.website}
+			{@render visitorsFallback('Besucher Landingpage', 'Lädt aus OpenPanel …')}
+		{:then website}
+			{#if website.ok}
+				<StatCard
+					label="Besucher Landingpage"
+					value={formatNumber(website.today)}
+					change={changeRatio(website.today, website.yesterday)}
+					changeLabel="Gestern: {formatNumber(website.yesterday)}"
+					series={website.last14}
+					href={landingpageHref}
+				/>
+			{:else}
+				{@render visitorsFallback('Besucher Landingpage', 'OpenPanel antwortet nicht')}
+			{/if}
+		{/await}
+	{/if}
 	<StatCard
-		label="Nutzer gesamt"
-		value={formatNumber(k.totalUsers)}
-		hint="{formatNumber(k.signups7d)} neu in 7 Tagen · {formatNumber(
-			k.onboardedUsers
-		)} mit Onboarding"
-		href={resolve('/(admin)/nutzer')}
-	/>
-	<StatCard
-		label="Registrierungen heute"
+		label="Registrierungen"
 		value={formatNumber(k.signupsToday)}
 		change={changeRatio(k.signupsToday, k.signupsYesterday)}
 		changeLabel="Gestern: {formatNumber(k.signupsYesterday)}"
@@ -87,11 +120,11 @@
 		href={resolve('/(admin)/wachstum')}
 	/>
 	<StatCard
-		label="Aktive Nutzer heute"
+		label="Aktive Nutzer"
 		value={formatNumber(k.activeToday)}
-		change={changeRatio(k.active7d, k.activePrev7d)}
-		hint="{formatNumber(k.active7d)} in 7 Tagen · {formatNumber(k.active30d)} in 30 Tagen"
-		changeLabel="7 Tage gegenüber den 7 Tagen davor"
+		change={changeRatio(k.activeToday, k.activeYesterday)}
+		changeLabel="Gestern: {formatNumber(k.activeYesterday)}"
+		series={data.active14.map((point) => point.value)}
 		href={resolve('/(admin)/nutzung')}
 	/>
 	<StatCard
@@ -102,13 +135,127 @@
 	/>
 </section>
 
+<div class="mt-8 mb-3 flex flex-wrap items-center justify-between gap-3">
+	<h2 class="text-label m-0 text-ink-500">Letzte {data.range} Tage</h2>
+	<SegmentedLinks label="Zeitraum" options={rangeOptions} value={String(data.range)} />
+</div>
+
+<section
+	class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
+	aria-label="Letzte {data.range} Tage"
+>
+	{#if !data.website}
+		{@render visitorsFallback('Besucher Landingpage', 'Landingpage nicht verbunden')}
+		{@render visitorsFallback('Besucher zu Registrierung', 'Braucht die Landingpage')}
+	{:else}
+		{#await data.website}
+			{@render visitorsFallback('Besucher Landingpage', 'Lädt aus OpenPanel …')}
+			{@render visitorsFallback('Besucher zu Registrierung', 'Lädt aus OpenPanel …')}
+		{:then website}
+			{#if website.ok}
+				<StatCard
+					label="Besucher Landingpage"
+					value={formatNumber(website.visitors)}
+					change={website.previousVisitors === null
+						? null
+						: changeRatio(website.visitors, website.previousVisitors)}
+					changeLabel="Davor: {formatNumber(website.previousVisitors ?? 0)}"
+					hint="eindeutig · Davor: {formatNumber(website.previousVisitors ?? 0)}"
+					href={landingpageHref}
+				/>
+				<StatCard
+					label="Besucher zu Registrierung"
+					value={formatPercent(conversion(data.signupTotal, website.visitors), 1)}
+					change={changeRatio(
+						conversion(data.signupTotal, website.visitors) ?? 0,
+						conversion(data.signupPreviousTotal, website.previousVisitors) ?? 0
+					)}
+					changeLabel="Davor: {formatPercent(
+						conversion(data.signupPreviousTotal, website.previousVisitors),
+						1
+					)}"
+					hint="Registrierungen je Besucher · Davor: {formatPercent(
+						conversion(data.signupPreviousTotal, website.previousVisitors),
+						1
+					)}"
+					href={resolve('/(admin)/wachstum')}
+				/>
+			{:else}
+				{@render visitorsFallback('Besucher Landingpage', 'OpenPanel antwortet nicht')}
+				{@render visitorsFallback('Besucher zu Registrierung', 'OpenPanel antwortet nicht')}
+			{/if}
+		{/await}
+	{/if}
+	<StatCard
+		label="Registrierungen"
+		value={formatNumber(data.signupTotal)}
+		change={changeRatio(data.signupTotal, data.signupPreviousTotal)}
+		changeLabel="Davor: {formatNumber(data.signupPreviousTotal)}"
+		hint="Davor: {formatNumber(data.signupPreviousTotal)}"
+		href={resolve('/(admin)/wachstum')}
+	/>
+	<StatCard
+		label="Onboarding abgeschlossen"
+		value={formatPercent(registered ? onboarded / registered : null)}
+		hint="{formatNumber(onboarded)} von {formatNumber(registered)} neuen Konten"
+		href={resolve('/(admin)/wachstum')}
+	/>
+</section>
+
+<section class="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
+	<Card title="Besucher Landingpage">
+		{#if !data.website}
+			<p class="m-0 text-[14px] text-ink-500">
+				Die Landingpage ist nicht verbunden. Setz OPENPANEL_WEBSITE_CLIENT_ID und
+				OPENPANEL_WEBSITE_CLIENT_SECRET, dann erscheinen hier die Besucher.
+			</p>
+		{:else}
+			{#await data.website}
+				<p class="m-0 text-[14px] text-ink-500">Lädt Daten aus OpenPanel …</p>
+			{:then website}
+				{#if website.ok}
+					{@const days = website.points.map((point) => point.day)}
+					{@const monthly = days.length > 1 && days.every((day) => day.endsWith('-01'))}
+					<LineChart
+						label={monthly
+							? 'Besucher der Landingpage pro Monat'
+							: 'Besucher der Landingpage pro Tag'}
+						keys={days}
+						series={[
+							{
+								key: 'visitors',
+								label: 'Besucher',
+								color: 'ink',
+								values: website.points.map((point) => point.visitors)
+							}
+						]}
+						formatKey={monthly ? formatMonth : formatDayLabel}
+						formatKeyLong={monthly ? formatMonth : formatDayLong}
+						height={220}
+					/>
+				{:else}
+					<Notice tone="error">OpenPanel antwortet nicht ({website.error}).</Notice>
+				{/if}
+			{/await}
+		{/if}
+	</Card>
+
+	<Card title="Registrierungen">
+		<ColumnChart
+			label="Registrierungen pro Tag"
+			points={data.signups.map((point) => ({ key: point.day, value: point.value }))}
+			color="violet"
+			formatKey={formatDayLabel}
+			formatKeyLong={formatDayLong}
+			height={220}
+		/>
+	</Card>
+</section>
+
 <section class="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-3">
-	<Card title="Registrierungen und aktive Nutzer" class="xl:col-span-2">
-		{#snippet action()}
-			<SegmentedLinks label="Zeitraum" options={rangeOptions} value={String(data.range)} />
-		{/snippet}
+	<Card title="Aktive Nutzer" class="xl:col-span-2">
 		<LineChart
-			label="Registrierungen und aktive Nutzer pro Tag"
+			label="Aktive Nutzer pro Tag"
 			keys={data.active.map((point) => point.day)}
 			series={[
 				{
@@ -116,12 +263,6 @@
 					label: 'Aktive Nutzer',
 					color: 'ink',
 					values: data.active.map((point) => point.value)
-				},
-				{
-					key: 'signups',
-					label: 'Registrierungen',
-					color: 'violet',
-					values: data.signups.map((point) => point.value)
 				}
 			]}
 			formatKey={formatDayLabel}
@@ -129,15 +270,56 @@
 		/>
 	</Card>
 
-	<Card title="Funnel ({data.range} Tage)">
-		<Funnel steps={data.funnel} />
+	<Card title="Funnel">
+		{#if data.website}
+			{#await data.website}
+				<Funnel steps={data.funnel} />
+			{:then website}
+				<Funnel
+					steps={website.ok
+						? [
+								{ key: 'visitors', label: 'Besucher Landingpage', value: website.visitors },
+								...data.funnel
+							]
+						: data.funnel}
+				/>
+			{/await}
+		{:else}
+			<Funnel steps={data.funnel} />
+		{/if}
 	</Card>
 </section>
 
 <section class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+	<Card title="Woher die Besucher kommen">
+		{#snippet action()}
+			<a href={landingpageHref} class="text-[14px] font-semibold text-violet-700">Landingpage</a>
+		{/snippet}
+		{#if !data.website}
+			<p class="m-0 text-[14px] text-ink-500">Die Landingpage ist nicht verbunden.</p>
+		{:else}
+			{#await data.website}
+				<p class="m-0 text-[14px] text-ink-500">Lädt Daten aus OpenPanel …</p>
+			{:then website}
+				{#if website.ok}
+					<RankedBars
+						color="ink"
+						items={website.sources.map((row) => ({
+							key: row.name ?? '',
+							label: row.name ?? 'Direkt',
+							value: row.sessions
+						}))}
+					/>
+				{:else}
+					<Notice tone="error">OpenPanel antwortet nicht ({website.error}).</Notice>
+				{/if}
+			{/await}
+		{/if}
+	</Card>
+
 	<Card title="Heute in Konta">
 		<dl class="m-0 grid grid-cols-1 divide-y divide-ink-100">
-			{#each [{ label: 'Belege erfasst', value: k.receiptsToday }, { label: 'Rechnungen ausgestellt', value: k.invoicesIssuedToday }, { label: 'Einträge im Änderungsprotokoll', value: k.auditEventsToday }, { label: 'Neue Konten', value: k.signupsToday }] as row (row.label)}
+			{#each [{ label: 'Belege erfasst', value: k.receiptsToday }, { label: 'Rechnungen ausgestellt', value: k.invoicesIssuedToday }, { label: 'Einträge im Änderungsprotokoll', value: k.auditEventsToday }, { label: 'Nutzer gesamt', value: k.totalUsers }] as row (row.label)}
 				<div class="flex items-baseline justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
 					<dt class="text-[14px] text-ink-700">{row.label}</dt>
 					<dd class="tnum m-0 text-[20px] font-semibold text-ink">{formatNumber(row.value)}</dd>
@@ -166,38 +348,6 @@
 					</li>
 				{/each}
 			</ul>
-		{/if}
-	</Card>
-
-	<Card title="Besucher (OpenPanel)">
-		{#if !data.openPanelConfigured}
-			<p class="m-0 text-[14px] text-ink-500">
-				OpenPanel ist nicht verbunden. Setz die OPENPANEL-Variablen, dann erscheinen hier Besucher,
-				Sessions und Seitenaufrufe.
-			</p>
-		{:else}
-			{#await data.visitors}
-				<p class="m-0 text-[14px] text-ink-500">Lädt Daten aus OpenPanel …</p>
-			{:then result}
-				{#if result?.ok}
-					<dl class="m-0 grid grid-cols-1 divide-y divide-ink-100">
-						{#each [['Besucher', result.data.totals.visitors], ['Sessions', result.data.totals.sessions], ['Seitenaufrufe', result.data.totals.pageViews]] as [label, value] (label)}
-							<div class="flex items-baseline justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
-								<dt class="text-[14px] text-ink-700">{label} ({data.range} Tage)</dt>
-								<dd class="tnum m-0 text-[20px] font-semibold text-ink">
-									{formatNumber(Number(value))}
-								</dd>
-							</div>
-						{/each}
-					</dl>
-					<a
-						href={resolve('/(admin)/analytics')}
-						class="mt-3 inline-block text-[14px] font-semibold text-violet-700">Zu Analytics</a
-					>
-				{:else}
-					<Notice tone="error">OpenPanel antwortet nicht ({result?.error}).</Notice>
-				{/if}
-			{/await}
 		{/if}
 	</Card>
 </section>
