@@ -10,7 +10,9 @@
 	import {
 		formatDayLabel,
 		formatDayLong,
+		formatMonth,
 		formatNumber,
+		formatPageLabel,
 		formatRelative,
 		formatTime
 	} from '#lib/format.js';
@@ -27,9 +29,11 @@
 		}))
 	);
 
-	/** @param {number} index */
-	const series = (index) => data.traffic[index];
-	const days = $derived(series(0)?.points.map((point) => point.day) ?? []);
+	const points = $derived(data.overview?.points ?? []);
+	const days = $derived(points.map((point) => point.day));
+	// Ab etwa zwei Monaten liefert OpenPanel einen Punkt pro Monat.
+	const monthly = $derived(days.length > 1 && days.every((day) => day.endsWith('-01')));
+	const multipleOrigins = $derived(new Set(data.pages.map((row) => row.origin)).size > 1);
 
 	/**
 	 * Pfad aus einem Screen View (volle URL mit SvelteKit-Route).
@@ -64,8 +68,8 @@
 	<Notice title="OpenPanel ist nicht verbunden.">
 		<p class="m-0 mt-1">
 			Leg im OpenPanel-Projekt unter Einstellungen einen eigenen Client im Modus „read“ an und setz
-			OPENPANEL_CLIENT_ID und OPENPANEL_CLIENT_SECRET. Der Tracking-Client der
-			App darf nur schreiben und reicht dafür nicht.
+			OPENPANEL_CLIENT_ID und OPENPANEL_CLIENT_SECRET. Der Tracking-Client der App darf nur
+			schreiben und reicht dafür nicht.
 		</p>
 	</Notice>
 {:else}
@@ -78,52 +82,56 @@
 	<section class="grid grid-cols-1 gap-4 sm:grid-cols-3">
 		<StatCard
 			label="Besucher"
-			value={formatNumber(series(0)?.total ?? 0)}
-			hint="eindeutige Profile · {data.range} Tage"
-			series={series(0)?.points.map((point) => point.value)}
+			value={formatNumber(data.overview?.totals.visitors ?? 0)}
+			hint="eindeutig · {data.range} Tage"
+			series={points.map((point) => point.visitors)}
 		/>
 		<StatCard
 			label="Sessions"
-			value={formatNumber(series(1)?.total ?? 0)}
+			value={formatNumber(data.overview?.totals.sessions ?? 0)}
 			hint="{data.range} Tage"
-			series={series(1)?.points.map((point) => point.value)}
+			series={points.map((point) => point.sessions)}
 		/>
 		<StatCard
 			label="Seitenaufrufe"
-			value={formatNumber(series(2)?.total ?? 0)}
+			value={formatNumber(data.overview?.totals.pageViews ?? 0)}
 			hint="{data.range} Tage"
-			series={series(2)?.points.map((point) => point.value)}
+			series={points.map((point) => point.pageViews)}
 		/>
 	</section>
 
 	<section class="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-3">
 		<Card title="Besucher und Sessions" class="xl:col-span-2">
 			<LineChart
-				label="Besucher und Sessions pro Tag"
+				label={monthly ? 'Besucher und Sessions pro Monat' : 'Besucher und Sessions pro Tag'}
 				keys={days}
 				series={[
 					{
 						key: 'users',
 						label: 'Besucher',
 						color: 'ink',
-						values: series(0)?.points.map((point) => point.value) ?? []
+						values: points.map((point) => point.visitors)
 					},
 					{
 						key: 'sessions',
 						label: 'Sessions',
 						color: 'violet',
-						values: series(1)?.points.map((point) => point.value) ?? []
+						values: points.map((point) => point.sessions)
 					}
 				]}
-				formatKey={formatDayLabel}
-				formatKeyLong={formatDayLong}
+				formatKey={monthly ? formatMonth : formatDayLabel}
+				formatKeyLong={monthly ? formatMonth : formatDayLong}
 				height={380}
 			/>
 		</Card>
-		<Card title="Meistbesuchte Seiten">
+		<Card title="Meistbesuchte Seiten (Sessions)">
 			<RankedBars
 				color="ink"
-				items={data.pages.map((row) => ({ key: row.path, label: row.path, value: row.total }))}
+				items={data.pages.map((row) => ({
+					key: `${row.origin}${row.path}`,
+					label: formatPageLabel(row, multipleOrigins),
+					value: row.sessions
+				}))}
 			/>
 		</Card>
 	</section>

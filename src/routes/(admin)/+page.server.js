@@ -7,7 +7,7 @@ import {
 } from '#lib/server/queries/overview.js';
 import { getAuditFeed } from '#lib/server/queries/activity.js';
 import { parseRange } from '#lib/server/queries/shared.js';
-import { getChart, isOpenPanelConfigured } from '#lib/server/openpanel.js';
+import { getOverview, isOpenPanelConfigured } from '#lib/server/openpanel.js';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ url }) {
@@ -35,15 +35,6 @@ export async function load({ url }) {
 		openPanelConfigured: isOpenPanelConfigured(),
 		// Nicht abwarten: kommt als Stream nach, damit eine langsame API die
 		// Übersicht nicht blockiert.
-		visitors: isOpenPanelConfigured()
-			? getChart({
-					days: range,
-					events: [
-						{ name: 'screen_view', segment: 'user', label: 'Besucher' },
-						{ name: 'screen_view', segment: 'event', label: 'Seitenaufrufe' },
-						{ name: 'screen_view', segment: 'session', label: 'Sessions' }
-					]
-				})
-			: null
+		visitors: isOpenPanelConfigured() ? getOverview(range) : null
 	};
 }

@@ -11,14 +11,15 @@ Gestaltung nach dem Konta-Styleguide (Tokens 1:1 aus `konta_app/src/routes/layou
 
 | Route          | Inhalt                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/` Übersicht  | Nutzer gesamt, Registrierungen heute, aktive Nutzer, MRR, Verlauf Registrierungen und Aktive, Trichter, was heute in Konta passiert ist, Auffälligkeiten, Besucher aus OpenPanel, neueste Registrierungen, letzte Aktivität                                                                                                                                                                                                         |
+| `/` Übersicht  | Nutzer gesamt, Registrierungen heute, aktive Nutzer, MRR, Verlauf Registrierungen und Aktive, Funnel, was heute in Konta passiert ist, Auffälligkeiten, Besucher aus OpenPanel, neueste Registrierungen, letzte Aktivität                                                                                                                                                                                                           |
 | `/nutzer`      | Alle Konten mit Suche (Name, E-Mail, Unternehmen, Telefon, ID), Filter nach Abo-Status und Onboarding, Sortierung                                                                                                                                                                                                                                                                                                                   |
 | `/nutzer/[id]` | **Alles zu einem Konto an einem Ort**: Stammdaten, Abo, Unternehmen, Onboarding und Umfrage, Leitfaden, Geräte und Sessions, Logins, genutzte Funktionen, Probleme (fehlgeschlagene Belegerkennung, Dauerrechnungen, Mailzustellung), Aktivitätskalender und eine **Zeitleiste**, die Änderungsprotokoll, Logins, Benachrichtigungen, Kontomeilensteine und OpenPanel-Ereignisse zusammenführt. Direktlinks zu OpenPanel und Stripe |
-| `/wachstum`    | Registrierungen pro Woche und Tag, Trichter, Akquise-Kanäle, bisher genutzte Tools, Steuerstatus, Steuerberatung, wo das Onboarding hängt, Bindung nach Registrierungswoche                                                                                                                                                                                                                                                         |
+| `/wachstum`    | Registrierungen pro Woche und Tag, Funnel, Akquise-Kanäle, bisher genutzte Tools, Steuerstatus, Steuerberatung, wo das Onboarding hängt, Bindung nach Registrierungswoche                                                                                                                                                                                                                                                           |
 | `/abos`        | MRR, zahlende Abos nach Tarif, Status aller Unternehmen, Test-zu-Abo-Quote, Tests die bald enden, Zahlungsprobleme und Kündigungen                                                                                                                                                                                                                                                                                                  |
 | `/nutzung`     | Aktive Nutzer pro Tag, Belege und Rechnungen pro Tag, Funktionen im Einsatz, häufigste Aktionen, Belegerkennung (Fehler- und Korrekturquote), Hintergrundjobs und Mailzustellung                                                                                                                                                                                                                                                    |
 | `/aktivitaet`  | Änderungsprotokoll über alle Unternehmen mit Vorher und Nachher, fehlgeschlagene Logins der letzten 24 Stunden                                                                                                                                                                                                                                                                                                                      |
 | `/analytics`   | OpenPanel: Besucher, Sessions, Seitenaufrufe, meistbesuchte Seiten, wichtige Ereignisse, Live-Strom mit aufgelösten Kontonamen                                                                                                                                                                                                                                                                                                      |
+| `/landingpage` | Zweites OpenPanel-Projekt (Website): Besucher, Sessions, Absprungrate, Sessiondauer, meistbesuchte Seiten, Quellen, UTM-Quellen und Kampagnen, Länder, Geräte, Browser, Betriebssysteme                                                                                                                                                                                                                                             |
 
 ## Wie die Daten zusammenkommen
 
@@ -41,8 +42,9 @@ Gestaltung nach dem Konta-Styleguide (Tokens 1:1 aus `konta_app/src/routes/layou
 Kein eigenes Benutzerkonto: Admins melden sich mit ihrem **Konta-Konto** an,
 wenn die E-Mail in `ADMIN_EMAILS` steht. Passwort (Argon2id) und 2FA (TOTP)
 werden gegen die Konta-Datenbank geprüft. Ist 2FA aktiv, braucht das Dashboard
-denselben `TWO_FACTOR_SECRET_KEY` wie die App. Die Session ist ein signiertes
-Cookie (12 Stunden, HttpOnly, Secure, SameSite=Strict). Wer aus `ADMIN_EMAILS`
+denselben `TWO_FACTOR_SECRET_KEY` wie die App. Die Session liegt im Speicher
+des Prozesses. Das Cookie enthält nur ein zufälliges Token (30 Tage, HttpOnly,
+Secure, SameSite=Strict). Ein Neustart meldet alle ab. Wer aus `ADMIN_EMAILS`
 entfernt wird, verliert den Zugang sofort.
 
 ## Einrichtung
@@ -72,6 +74,12 @@ gehört zu genau einem Projekt, `OPENPANEL_PROJECT_ID` braucht es daher nur bei
 einem root-Client (die ID steht in der Dashboard-URL:
 `https://dashboard.openpanel.dev/<org>/<projekt-id>`). Optional
 `OPENPANEL_DASHBOARD_URL` für Direktlinks zu Profilen.
+
+Die Landingpage trackt in ein **eigenes OpenPanel-Projekt**. Für die Seite
+`/landingpage` dort ebenfalls einen read-Client anlegen und
+`OPENPANEL_WEBSITE_CLIENT_ID` und `OPENPANEL_WEBSITE_CLIENT_SECRET` setzen
+(optional `OPENPANEL_WEBSITE_DASHBOARD_URL` für den Link ins OpenPanel-Dashboard). Ohne
+diese Variablen zeigt die Seite nur einen Hinweis.
 
 ### Lokale Demo-Daten
 

@@ -15,7 +15,7 @@
 				aria-hidden="true"
 			></div>
 		{/if}
-		<div class="mx-auto w-full max-w-[1280px] px-4 py-6 md:px-8 md:py-8">
+		<div class="w-full px-4 py-6 md:px-8 md:py-8">
 			{@render children()}
 		</div>
 	</main>

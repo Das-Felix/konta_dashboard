@@ -129,7 +129,7 @@
 		/>
 	</Card>
 
-	<Card title="Trichter ({data.range} Tage)">
+	<Card title="Funnel ({data.range} Tage)">
 		<Funnel steps={data.funnel} />
 	</Card>
 </section>
@@ -181,11 +181,11 @@
 			{:then result}
 				{#if result?.ok}
 					<dl class="m-0 grid grid-cols-1 divide-y divide-ink-100">
-						{#each [['Besucher', 0], ['Sessions', 2], ['Seitenaufrufe', 1]] as [label, index] (label)}
+						{#each [['Besucher', result.data.totals.visitors], ['Sessions', result.data.totals.sessions], ['Seitenaufrufe', result.data.totals.pageViews]] as [label, value] (label)}
 							<div class="flex items-baseline justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
 								<dt class="text-[14px] text-ink-700">{label} ({data.range} Tage)</dt>
 								<dd class="tnum m-0 text-[20px] font-semibold text-ink">
-									{formatNumber(result.data[Number(index)]?.total ?? 0)}
+									{formatNumber(Number(value))}
 								</dd>
 							</div>
 						{/each}

@@ -9,6 +9,7 @@ import {
 	readPendingToken,
 	readSessionToken,
 	registerAttempt,
+	revokeSessionToken,
 	verifyAdminTotp
 } from './auth.js';
 import { ADMIN_EMAILS, TWO_FACTOR_SECRET_KEY } from '$app/env/private';
@@ -33,15 +34,16 @@ describe('auth', () => {
 		expect(isAdminEmail('jemand@beispiel.at')).toBe(false);
 	});
 
-	it('signiert Sessions und erkennt Manipulation', () => {
-		const token = createSessionToken({ userId: 'u1', email: admin, name: 'Admin' });
-		expect(readSessionToken(token)?.userId).toBe('u1');
-		const [payload, signature] = token.split('.');
-		const forged = Buffer.from(
-			JSON.stringify({ ...JSON.parse(Buffer.from(payload, 'base64url').toString()), userId: 'u2' })
-		).toString('base64url');
-		expect(readSessionToken(`${forged}.${signature}`)).toBeNull();
+	it('hält Sessions im Prozess und verwirft sie einzeln', () => {
+		const first = createSessionToken({ userId: 'u1', email: admin, name: 'Admin' });
+		const second = createSessionToken({ userId: 'u1', email: admin, name: 'Admin' });
+		expect(readSessionToken(first)?.userId).toBe('u1');
+		expect(readSessionToken('fremd')).toBeNull();
 		expect(readSessionToken(undefined)).toBeNull();
+		revokeSessionToken(first);
+		expect(readSessionToken(first)).toBeNull();
+		expect(readSessionToken(second)?.name).toBe('Admin');
+		revokeSessionToken(second);
 	});
 
 	it('trennt Pending- und Session-Token', () => {
