@@ -209,6 +209,50 @@ export function formatDayLong(isoDay) {
 }
 
 /**
+ * Monat zu einem Tag (`YYYY-MM-DD`): `Oktober 2026`. Für Reihen, die
+ * OpenPanel bei langen Zeiträumen pro Monat liefert.
+ *
+ * @param {string} isoDay
+ * @returns {string}
+ */
+export function formatMonth(isoDay) {
+	const [year, month] = isoDay.split('-').map(Number);
+	return `${MONTHS_LONG[month - 1]} ${year}`;
+}
+
+/**
+ * Dauer in Sekunden kurz: `45 s`, `3 min 20 s`, `1 h 5 min`.
+ *
+ * @param {number} seconds
+ * @returns {string}
+ */
+export function formatDuration(seconds) {
+	const total = Math.max(0, Math.round(seconds));
+	if (total < 60) return `${total} s`;
+	const minutes = Math.floor(total / 60);
+	if (minutes < 60) return total % 60 ? `${minutes} min ${total % 60} s` : `${minutes} min`;
+	const hours = Math.floor(minutes / 60);
+	return minutes % 60 ? `${hours} h ${minutes % 60} min` : `${hours} h`;
+}
+
+/**
+ * Seite aus der OpenPanel-Übersicht. Mehrere Origins (z. B. localhost und
+ * konta.at) zeigt OpenPanel getrennt, dann gehört der Host dazu.
+ *
+ * @param {{ origin: string, path: string }} row
+ * @param {boolean} withHost
+ * @returns {string}
+ */
+export function formatPageLabel(row, withHost) {
+	if (!withHost) return row.path;
+	try {
+		return `${new URL(row.origin).host}${row.path}`;
+	} catch {
+		return row.path;
+	}
+}
+
+/**
  * Überschrift für eine Tagesgruppe in Zeitleisten: `Heute`, `Gestern` oder
  * das lange Datum.
  *

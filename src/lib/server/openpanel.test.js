@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
+	insightsRange,
+	normalizeBreakdown,
 	normalizeChart,
 	normalizeEvent,
+	normalizeOverview,
 	parseTimestamp,
+	periodRange,
+	shiftDay,
 	summarizeProfile,
 	toPathname
 } from './openpanel.js';
@@ -69,6 +74,89 @@ describe('openpanel', () => {
 		expect(normalizeChart(null, [])).toEqual([]);
 	});
 
+	it('bringt Reihen in die angefragte Reihenfolge', () => {
+		// So liefert OpenPanel: nach Summe sortiert, Name mit Präfix.
+		const series = normalizeChart(
+			{
+				series: [
+					{
+						names: ['(C) screen_view'],
+						event: { id: 'C', name: 'screen_view' },
+						metrics: { sum: 8578, count: 72 },
+						data: []
+					},
+					{
+						names: ['(A) screen_view'],
+						event: { id: 'A', name: 'screen_view' },
+						metrics: { sum: 126, count: 72 },
+						data: []
+					},
+					{
+						names: ['(B) screen_view'],
+						event: { id: 'B', name: 'screen_view' },
+						metrics: { sum: 90, count: 72 },
+						data: []
+					}
+				]
+			},
+			[
+				{ name: 'screen_view', segment: 'user' },
+				{ name: 'screen_view', segment: 'session' },
+				{ name: 'screen_view', segment: 'event' }
+			]
+		);
+		expect(series.map((entry) => entry.total)).toEqual([126, 90, 8578]);
+		expect(series[0].name).toBe('screen_view');
+	});
+
+	it('liest die Kennzahlen der OpenPanel-Übersicht', () => {
+		const overview = normalizeOverview({
+			metrics: {
+				unique_visitors: 34,
+				total_sessions: 136,
+				total_screen_views: 8780,
+				bounce_rate: 18.38
+			},
+			series: [
+				{
+					date: '2026-09-11T00:00:00.000Z',
+					unique_visitors: 1,
+					total_sessions: 1,
+					total_screen_views: 14
+				}
+			]
+		});
+		expect(overview.totals.visitors).toBe(34);
+		expect(overview.totals.sessions).toBe(136);
+		expect(overview.totals.pageViews).toBe(8780);
+		expect(overview.points).toEqual([
+			{ day: '2026-09-11', visitors: 1, sessions: 1, pageViews: 14 }
+		]);
+	});
+
+	it('wählt den Zeitraum wie im OpenPanel-Dashboard', () => {
+		const now = new Date('2026-10-11T12:00:00Z');
+		expect(insightsRange(30, now)).toEqual({ range: '30d' });
+		expect(insightsRange(90, now)).toEqual({
+			startDate: '2026-07-13',
+			endDate: '2026-10-11 23:59:59'
+		});
+	});
+
+	it('rechnet feste Zeiträume in Wiener Kalendertagen', () => {
+		expect(shiftDay('2026-03-01', 1)).toBe('2026-02-28');
+		// 23:30 UTC ist in Wien schon der nächste Tag.
+		const now = new Date('2026-10-12T23:30:00Z');
+		expect(periodRange(1, 0, now)).toEqual({
+			startDate: '2026-10-13',
+			endDate: '2026-10-13 23:59:59'
+		});
+		expect(periodRange(7, 1, now)).toEqual({
+			startDate: '2026-09-30',
+			endDate: '2026-10-06 23:59:59'
+		});
+	});
+
 	it('fasst ein Profil zusammen', () => {
 		const events = [
 			normalizeEvent({
@@ -104,5 +192,19 @@ describe('openpanel', () => {
 		expect(summary?.lastSeen.toISOString()).toBe('2026-10-03T10:00:00.000Z');
 		expect(summarizeProfile([])).toBeNull();
 		expect(toPathname('/x')).toBe('/x');
+	});
+
+	it('normalisiert Aufschlüsselungen und sortiert nach Sessions', () => {
+		const rows = normalizeBreakdown([
+			{ name: 'Google', sessions: 4, pageviews: 9, revenue: 0 },
+			{ name: null, sessions: 12, pageviews: 30 },
+			{ name: '', sessions: 1, pageViews: 2 }
+		]);
+		expect(rows).toEqual([
+			{ name: null, sessions: 12, pageViews: 30 },
+			{ name: 'Google', sessions: 4, pageViews: 9 },
+			{ name: null, sessions: 1, pageViews: 2 }
+		]);
+		expect(normalizeBreakdown({ error: 'x' })).toEqual([]);
 	});
 });

@@ -91,6 +91,20 @@ export const variables = defineEnvVars({
 			'Optional: Projekt-URL im OpenPanel-Dashboard, z. B. https://dashboard.openpanel.dev/<org>/<projekt>. Aktiviert Direktlinks zu Profilen.',
 		schema: (value) => optional(value)?.replace(/\/+$/, '')
 	},
+	OPENPANEL_WEBSITE_CLIENT_ID: {
+		description:
+			'Optional: read-Client im OpenPanel-Projekt der Landingpage. Aktiviert die Seite /landingpage.',
+		schema: optional
+	},
+	OPENPANEL_WEBSITE_CLIENT_SECRET: {
+		description: 'Secret zum Lese-Client der Landingpage.',
+		schema: optional
+	},
+	OPENPANEL_WEBSITE_DASHBOARD_URL: {
+		description:
+			'Optional: Projekt-URL der Landingpage im OpenPanel-Dashboard. Aktiviert den Link „In OpenPanel öffnen“.',
+		schema: (value) => optional(value)?.replace(/\/+$/, '')
+	},
 	KONTA_APP_URL: {
 		description: 'Optional: URL der Konta-App, z. B. https://app.konta.at',
 		schema: (value) => optional(value)?.replace(/\/+$/, '')

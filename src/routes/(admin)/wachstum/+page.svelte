@@ -107,7 +107,7 @@
 			height={360}
 		/>
 	</Card>
-	<Card title="Trichter ({data.range} Tage)">
+	<Card title="Funnel ({data.range} Tage)">
 		<Funnel steps={data.funnel} />
 	</Card>
 </section>

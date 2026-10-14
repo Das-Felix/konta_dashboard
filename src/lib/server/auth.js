@@ -24,7 +24,8 @@ import { ADMIN_EMAILS, SESSION_SECRET, TWO_FACTOR_SECRET_KEY } from '$app/env/pr
 import { queryOne } from '#lib/server/db.js';
 
 export const SESSION_COOKIE = 'konta_admin';
-export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 12;
+/** 14 Tage. */
+export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 14;
 const PENDING_MAX_AGE_SECONDS = 60 * 5;
 
 /**

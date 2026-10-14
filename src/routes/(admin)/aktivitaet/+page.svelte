@@ -1,4 +1,5 @@
 <script>
+	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import Card from '#lib/components/ui/Card.svelte';
@@ -29,15 +30,25 @@
 		return resolve(query ? `/(admin)/aktivitaet?${query}` : '/(admin)/aktivitaet');
 	}
 
-	const typeOptions = $derived([
-		{ value: '', label: 'Alle', href: hrefWith({ typ: '' }) },
-		...data.entityTypes.map((row) => ({
-			value: row.entityType,
-			label: entityTypeLabel(row.entityType),
-			href: hrefWith({ typ: row.entityType }),
-			count: Number(row.value)
-		}))
-	]);
+	const typeOptions = $derived(
+		/** @type {{ value: string, label: string, count?: number }[]} */ ([
+			{ value: '', label: 'Alle' },
+			...data.entityTypes.map((row) => ({
+				value: row.entityType,
+				label: entityTypeLabel(row.entityType),
+				count: Number(row.value)
+			}))
+		])
+	);
+
+	/**
+	 * @param {Event} event
+	 */
+	function onType(event) {
+		goto(hrefWith({ typ: /** @type {HTMLSelectElement} */ (event.currentTarget).value }), {
+			reset: false
+		});
+	}
 
 	const actorOptions = $derived(
 		[
@@ -58,8 +69,21 @@
 	description="Alle steuerrelevanten Änderungen über alle Unternehmen, neueste zuerst. Mit Vorher und Nachher, für Support und Nachvollziehbarkeit."
 />
 
-<div class="mb-4 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-	<SegmentedLinks label="Bereich" options={typeOptions} value={data.entityType} />
+<div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+	<label class="flex items-center gap-2 text-[14px] text-ink-700">
+		Bereich
+		<select
+			value={data.entityType}
+			onchange={onType}
+			class="h-control-sm max-w-full rounded-md border border-ink-200 bg-white px-2.5 text-[14px] text-ink outline-none focus:shadow-[var(--focus-ring)]"
+		>
+			{#each typeOptions as option (option.value)}
+				<option value={option.value}>
+					{option.label}{option.count !== undefined ? ` (${formatNumber(option.count)})` : ''}
+				</option>
+			{/each}
+		</select>
+	</label>
 	<SegmentedLinks label="Ausgelöst von" options={actorOptions} value={data.actorType} />
 </div>
 
