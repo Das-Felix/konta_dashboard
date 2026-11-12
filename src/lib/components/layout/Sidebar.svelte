@@ -11,6 +11,7 @@
 	import CreditCard from '@lucide/svelte/icons/credit-card';
 	import Activity from '@lucide/svelte/icons/activity';
 	import ScrollText from '@lucide/svelte/icons/scroll-text';
+	import Mail from '@lucide/svelte/icons/mail';
 	import ChartLine from '@lucide/svelte/icons/chart-line';
 	import Globe from '@lucide/svelte/icons/globe';
 	import LogOut from '@lucide/svelte/icons/log-out';
@@ -30,6 +31,7 @@
 		{ label: 'Wachstum', href: resolve('/(admin)/wachstum'), icon: TrendingUp },
 		{ label: 'Abos', href: resolve('/(admin)/abos'), icon: CreditCard },
 		{ label: 'Nutzung', href: resolve('/(admin)/nutzung'), icon: Activity },
+		{ label: 'E-Mails', href: resolve('/(admin)/mails'), icon: Mail },
 		{ label: 'Änderungsprotokoll', href: resolve('/(admin)/aktivitaet'), icon: ScrollText },
 		{ label: 'Analytics', href: resolve('/(admin)/analytics'), icon: ChartLine },
 		{ label: 'Landingpage', href: resolve('/(admin)/landingpage'), icon: Globe }

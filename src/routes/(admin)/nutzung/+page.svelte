@@ -227,7 +227,12 @@
 			zugestellt,
 			<span class="tnum font-semibold {data.background.mailsFailed ? 'text-error' : 'text-ink'}"
 				>{formatNumber(data.background.mailsFailed)}</span
-			> fehlgeschlagen
+			>
+			fehlgeschlagen.
+			<a
+				href={resolve('/(admin)/mails')}
+				class="focus-ring rounded-sm text-ink-500 underline hover:text-ink">Alle Plattform-Mails</a
+			>
 		</p>
 		{#if data.background.failedRuns.length > 0}
 			<p class="text-label m-0 mt-5 mb-2 text-ink-500">Fehlgeschlagene Läufe</p>

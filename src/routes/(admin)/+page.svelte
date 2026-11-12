@@ -66,6 +66,11 @@
 				value: k.recurringFailed7d,
 				label: 'Dauerrechnungen fehlgeschlagen (7 Tage)',
 				href: resolve('/(admin)/nutzung')
+			},
+			{
+				value: k.emailsFailed7d,
+				label: 'Mails nicht verschickt (7 Tage)',
+				href: `${resolve('/(admin)/mails')}?status=fehlgeschlagen&range=7`
 			}
 		].filter((alert) => alert.value > 0)
 	);

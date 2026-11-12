@@ -203,7 +203,8 @@ const rows = {
 	recurring_invoice_runs: [],
 	vehicles: [],
 	company_audit_logs: [],
-	notifications: []
+	notifications: [],
+	email_logs: []
 };
 
 const adminHash = await hash('konta-demo', {
@@ -666,6 +667,51 @@ for (let index = 0; index < USER_COUNT; index += 1) {
 		});
 	}
 
+	// Plattform-Mails (email_logs).
+	/** @param {string} type @param {Date} when @param {Record<string, unknown>} [metadata] */
+	const mail = (type, when, metadata) => {
+		if (when.getTime() > NOW) return;
+		const roll = random();
+		const state = roll < 0.9 ? 'SENT' : roll < 0.95 ? 'FAILED' : 'SKIPPED';
+		const logId = id('em');
+		rows.email_logs.push({
+			id: logId,
+			userId,
+			companyId,
+			toEmail: email,
+			type,
+			dedupeKey: `${type}:${logId}`,
+			status: state,
+			attempts: state === 'FAILED' ? between(1, 3) : state === 'SENT' ? 1 : 0,
+			messageId: state === 'SENT' ? `demo-${logId}@lettermint` : null,
+			error:
+				state === 'FAILED'
+					? pick(['Mailbox voll', 'Empfänger unbekannt', 'Zeitüberschreitung bei Lettermint'])
+					: null,
+			metadata: metadata ? JSON.stringify(metadata) : null,
+			sentAt: state === 'SENT' ? when : null,
+			createdAt: when,
+			updatedAt: when
+		});
+	};
+	mail('email_verification', past(new Date(createdAt.getTime() + 60_000)));
+	if (verified) mail('welcome', past(new Date(createdAt.getTime() + 10 * 60_000)));
+	if (verified && !onboarded) {
+		mail('onboarding_reminder', new Date(createdAt.getTime() + DAY), {
+			onboardingStep: 'steuerstatus'
+		});
+	}
+	for (const [type, daysLeft] of /** @type {const} */ ([
+		['trial_reminder_14d', 14],
+		['trial_reminder_7d', 7],
+		['trial_reminder_1d', 1],
+		['trial_expired', 0]
+	])) {
+		if (status === 'ACTIVE' && daysLeft < 7) continue;
+		mail(type, new Date(trialEndsAt.getTime() - daysLeft * DAY), { daysLeft });
+	}
+	if (chance(0.03)) mail('security_password_changed', at(between(0, daysAgo)));
+
 	// Benachrichtigungen.
 	if (chance(0.5)) {
 		const when = at(between(0, 10));
@@ -730,6 +776,8 @@ function withDefaults(list, defaults) {
 
 try {
 	await client.query('BEGIN');
+	// email_logs hängt mit SET NULL an users, also vorher selbst löschen.
+	await client.query(`DELETE FROM email_logs WHERE id LIKE 'demo_%'`);
 	// Kaskaden entfernen abhängige Zeilen (users hängen mit RESTRICT an companies).
 	await client.query(`DELETE FROM login_attempts WHERE id LIKE 'demo_%'`);
 	await client.query(`DELETE FROM users WHERE id LIKE 'demo_%'`);
@@ -779,6 +827,7 @@ try {
 			body: null
 		})
 	);
+	await insert('email_logs', rows.email_logs);
 	await client.query('COMMIT');
 } catch (error) {
 	await client.query('ROLLBACK');

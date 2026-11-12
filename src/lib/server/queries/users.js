@@ -3,6 +3,7 @@
  */
 
 import { query, queryOne } from '#lib/server/db.js';
+import { getUserEmails } from './emails.js';
 
 export const PAGE_SIZE = 25;
 
@@ -155,7 +156,8 @@ export async function getUserDetail(userId) {
 		notifications,
 		failedExtractions,
 		failedRuns,
-		dailyActivity
+		dailyActivity,
+		emails
 	] = await Promise.all([
 		queryOne(
 			`SELECT
@@ -232,7 +234,8 @@ export async function getUserDetail(userId) {
 			WHERE at >= now() AT TIME ZONE 'UTC' - interval '90 days'
 			GROUP BY 1 ORDER BY 1`,
 			[userId]
-		)
+		),
+		getUserEmails(userId)
 	]);
 
 	return {
@@ -246,6 +249,7 @@ export async function getUserDetail(userId) {
 		notifications,
 		failedExtractions,
 		failedRuns,
+		emails,
 		dailyActivity: dailyActivity.map((row) => ({ day: row.day, value: Number(row.value) }))
 	};
 }

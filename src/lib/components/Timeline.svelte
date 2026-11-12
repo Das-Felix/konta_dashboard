@@ -51,7 +51,8 @@
 		protokoll: 'bg-violet-700',
 		login: 'bg-ink-400',
 		nutzung: 'bg-ink',
-		benachrichtigung: 'bg-violet-300'
+		benachrichtigung: 'bg-violet-300',
+		mail: 'bg-ink-200'
 	};
 
 	const chipBase =

@@ -1,7 +1,8 @@
 /**
  * Führt alle Quellen zu einem Nutzer in eine Zeitleiste zusammen:
  * Kontomeilensteine und Login-Versuche (DB), Änderungsprotokoll (DB),
- * Benachrichtigungen (DB) und Produktereignisse (OpenPanel).
+ * Benachrichtigungen (DB), Plattform-Mails (DB) und Produktereignisse
+ * (OpenPanel).
  *
  * Reine Funktion ohne Server-Abhängigkeiten, damit sie testbar bleibt und
  * die Seite sie bei Bedarf auch im Browser nutzen kann.
@@ -9,6 +10,8 @@
 
 import {
 	actionLabel,
+	EMAIL_STATUS,
+	emailTypeLabel,
 	entityTypeLabel,
 	eventLabel,
 	LOGIN_RESULT,
@@ -16,7 +19,7 @@ import {
 } from './labels.js';
 
 /**
- * @typedef {'konto' | 'protokoll' | 'login' | 'nutzung' | 'benachrichtigung'} TimelineSource
+ * @typedef {'konto' | 'protokoll' | 'login' | 'nutzung' | 'benachrichtigung' | 'mail'} TimelineSource
  */
 
 /**
@@ -44,7 +47,8 @@ export const TIMELINE_SOURCE_LABELS = {
 	protokoll: 'Änderungsprotokoll',
 	login: 'Anmeldung',
 	nutzung: 'Nutzung (OpenPanel)',
-	benachrichtigung: 'Benachrichtigung'
+	benachrichtigung: 'Benachrichtigung',
+	mail: 'E-Mail'
 };
 
 /** Länger als das liegt zwischen zwei Seitenaufrufen keine zusammenhängende Strecke. */
@@ -97,6 +101,7 @@ export function parseAuditChanges(changes) {
  *   audit?: any[],
  *   logins?: any[],
  *   notifications?: any[],
+ *   emails?: any[],
  *   events?: import('./server/openpanel.js').OpenPanelEvent[],
  *   now?: Date
  * }} sources
@@ -107,6 +112,7 @@ export function buildTimeline({
 	audit = [],
 	logins = [],
 	notifications = [],
+	emails = [],
 	events = [],
 	now = new Date()
 }) {
@@ -231,6 +237,25 @@ export function buildTimeline({
 				notification.readAt ? 'gelesen' : 'ungelesen',
 				notification.emailSentAt ? 'per Mail' : null
 			].filter(/** @returns {value is string} */ (value) => Boolean(value))
+		});
+	}
+
+	for (const mail of emails) {
+		// Benachrichtigungs-Mails stehen schon beim Eintrag der Benachrichtigung.
+		if (mail.type === 'notification') continue;
+		const status = mail.stale
+			? 'hängt im Versand'
+			: (EMAIL_STATUS[mail.status]?.label ?? mail.status).toLowerCase();
+		push({
+			id: `mail-${mail.id}`,
+			at: mail.sentAt ?? mail.createdAt,
+			source: 'mail',
+			title: `Mail: ${emailTypeLabel(mail.type)}`,
+			detail: mail.error ?? null,
+			tone: mail.status === 'FAILED' || mail.stale ? 'error' : 'neutral',
+			meta: [status, mail.attempts > 1 ? `${mail.attempts} Versuche` : null].filter(
+				/** @returns {value is string} */ (value) => Boolean(value)
+			)
 		});
 	}
 

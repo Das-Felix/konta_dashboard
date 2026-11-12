@@ -192,6 +192,48 @@ export const NOTIFICATION_CATEGORY_LABELS = {
 };
 
 /**
+ * Typen der Plattform-Mails (`email_logs.type`), Quelle:
+ * `konta_app/src/lib/server/email/lifecycle/catalog.js`. Unbekannte Typen
+ * zeigt `emailTypeLabel` roh an, ein neuer Typ in der App bricht hier nichts.
+ *
+ * @type {Record<string, { label: string, group: string }>}
+ */
+export const EMAIL_TYPES = {
+	welcome: { label: 'Willkommen', group: 'Onboarding' },
+	onboarding_reminder: { label: 'Onboarding-Erinnerung', group: 'Onboarding' },
+	activation_nudge: { label: 'Erste Schritte', group: 'Onboarding' },
+	trial_reminder_14d: { label: 'Test endet in 14 Tagen', group: 'Testzeitraum' },
+	trial_reminder_7d: { label: 'Test endet in 7 Tagen', group: 'Testzeitraum' },
+	trial_reminder_1d: { label: 'Test endet morgen', group: 'Testzeitraum' },
+	trial_expired: { label: 'Test abgelaufen', group: 'Testzeitraum' },
+	trial_winback: { label: 'Rückholung nach Test', group: 'Testzeitraum' },
+	security_password_changed: { label: 'Passwort geändert', group: 'Sicherheit' },
+	security_2fa_disabled: { label: '2FA deaktiviert', group: 'Sicherheit' },
+	security_email_changed: { label: 'E-Mail geändert', group: 'Sicherheit' },
+	email_verification: { label: 'Bestätigungscode', group: 'Konto' },
+	account_reset: { label: 'Konto zurücksetzen', group: 'Konto' },
+	support_request: { label: 'Supportanfrage (an uns)', group: 'Support' },
+	support_request_confirmation: { label: 'Supportanfrage bestätigt', group: 'Support' },
+	notification: { label: 'Benachrichtigung', group: 'Benachrichtigung' }
+};
+
+/**
+ * @param {string} type
+ * @returns {string}
+ */
+export function emailTypeLabel(type) {
+	return EMAIL_TYPES[type]?.label ?? type;
+}
+
+/** @type {Record<string, { label: string, tone: Tone }>} */
+export const EMAIL_STATUS = {
+	SENT: { label: 'Versendet', tone: 'green' },
+	FAILED: { label: 'Fehlgeschlagen', tone: 'error' },
+	SKIPPED: { label: 'Übersprungen', tone: 'neutral' },
+	PENDING: { label: 'Läuft', tone: 'soft' }
+};
+
+/**
  * Analytics-Ereignisse der Konta-App. Gruppen dienen den Filtern und der
  * Farbe in der Zeitleiste.
  *

@@ -126,4 +126,56 @@ describe('timeline', () => {
 			['2026-10-01', 2]
 		]);
 	});
+	it('zeigt Plattform-Mails, aber keine doppelten Benachrichtigungs-Mails', () => {
+		const items = buildTimeline({
+			user: {
+				createdAt: new Date('2026-10-01T08:00:00Z'),
+				emailVerifiedAt: null,
+				onboardingCompletedAt: null
+			},
+			emails: [
+				{
+					id: 'm1',
+					type: 'trial_reminder_7d',
+					status: 'SENT',
+					attempts: 1,
+					error: null,
+					stale: false,
+					sentAt: new Date('2026-10-20T07:00:00Z'),
+					createdAt: new Date('2026-10-20T06:59:58Z')
+				},
+				{
+					id: 'm2',
+					type: 'welcome',
+					status: 'FAILED',
+					attempts: 3,
+					error: 'Mailbox voll',
+					stale: false,
+					sentAt: null,
+					createdAt: new Date('2026-10-02T08:00:00Z')
+				},
+				{
+					id: 'm3',
+					type: 'notification',
+					status: 'SENT',
+					attempts: 1,
+					error: null,
+					stale: false,
+					sentAt: new Date('2026-10-03T08:00:00Z'),
+					createdAt: new Date('2026-10-03T08:00:00Z')
+				}
+			]
+		});
+		const mails = items.filter((item) => item.source === 'mail');
+		expect(mails.map((item) => item.title)).toEqual([
+			'Mail: Test endet in 7 Tagen',
+			'Mail: Willkommen'
+		]);
+		expect(mails[0].at).toEqual(new Date('2026-10-20T07:00:00Z'));
+		expect(mails[1]).toMatchObject({
+			tone: 'error',
+			detail: 'Mailbox voll',
+			meta: ['fehlgeschlagen', '3 Versuche']
+		});
+	});
 });

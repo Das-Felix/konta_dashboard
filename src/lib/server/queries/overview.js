@@ -30,6 +30,7 @@ import { ACTIVITY_SOURCE, dailySeries } from './shared.js';
  * @property {number} auditEventsToday
  * @property {number} extractionFailed7d
  * @property {number} recurringFailed7d
+ * @property {number} emailsFailed7d
  */
 
 /**
@@ -78,7 +79,8 @@ export async function getOverviewKpis() {
 				(SELECT count(*) FROM issued_invoices WHERE status = 'ISSUED' AND "issuedAt" >= ${viennaDayStart(0)}) AS issued,
 				(SELECT count(*) FROM company_audit_logs WHERE "createdAt" >= ${viennaDayStart(0)}) AS audit,
 				(SELECT count(*) FROM invoices WHERE "extractionState" = 'FAILED' AND "createdAt" >= ${viennaDayStart(6)}) AS extraction_failed,
-				(SELECT count(*) FROM recurring_invoice_runs WHERE status = 'FAILED' AND "createdAt" >= ${viennaDayStart(6)}) AS recurring_failed`
+				(SELECT count(*) FROM recurring_invoice_runs WHERE status = 'FAILED' AND "createdAt" >= ${viennaDayStart(6)}) AS recurring_failed,
+				(SELECT count(*) FROM email_logs WHERE status = 'FAILED' AND "createdAt" >= ${viennaDayStart(6)}) AS emails_failed`
 		)
 	]);
 
@@ -109,7 +111,8 @@ export async function getOverviewKpis() {
 		invoicesIssuedToday: today?.issued ?? 0,
 		auditEventsToday: today?.audit ?? 0,
 		extractionFailed7d: today?.extraction_failed ?? 0,
-		recurringFailed7d: today?.recurring_failed ?? 0
+		recurringFailed7d: today?.recurring_failed ?? 0,
+		emailsFailed7d: today?.emails_failed ?? 0
 	};
 }
 

@@ -29,6 +29,7 @@
 	} from '#lib/format.js';
 	import {
 		CURRENT_TOOL_LABELS,
+		EMAIL_STATUS,
 		GUIDE_STEP_LABELS,
 		INTERVAL_LABELS,
 		LEAD_SOURCE_LABELS,
@@ -38,6 +39,7 @@
 		PLAN_LABELS,
 		UVA_PERIOD_LABELS,
 		VAT_MODE_LABELS,
+		emailTypeLabel,
 		labelOf
 	} from '#lib/labels.js';
 	import { monthlyRevenue } from '#lib/plans.js';
@@ -65,7 +67,8 @@
 		user: /** @type {import('#lib/timeline.js').TimelineUser} */ (u),
 		audit: data.audit,
 		logins: data.logins,
-		notifications: data.notifications
+		notifications: data.notifications,
+		emails: data.emails
 	});
 
 	const failedLogins24h = $derived(
@@ -103,6 +106,15 @@
 					at: row.createdAt,
 					title: `Mail nicht zugestellt: ${row.title}`,
 					detail: row.emailError
+				})),
+			// Benachrichtigungs-Mails sind oben schon über `emailError` erfasst.
+			...data.emails
+				.filter((row) => row.type !== 'notification' && (row.status === 'FAILED' || row.stale))
+				.map((row) => ({
+					id: `email-${row.id}`,
+					at: row.createdAt,
+					title: `${row.stale ? 'Mail hängt im Versand' : 'Mail nicht verschickt'}: ${emailTypeLabel(row.type)}`,
+					detail: row.error
 				}))
 		].sort((a, b) => b.at.getTime() - a.at.getTime())
 	);
@@ -455,6 +467,48 @@
 						<p class="m-0 text-[14px] text-error">OpenPanel antwortet nicht ({op?.error}).</p>
 					{/if}
 				{/await}
+			{/if}
+		</Card>
+
+		<Card title="E-Mails">
+			{#snippet action()}
+				{#if data.emails.length > 0}
+					<a
+						href="{resolve('/(admin)/mails')}?q={encodeURIComponent(u.id)}"
+						class="focus-ring rounded-sm text-[12.5px] text-ink-500 hover:text-ink hover:underline"
+						>Im Protokoll</a
+					>
+				{/if}
+			{/snippet}
+			{#if data.emails.length === 0}
+				<p class="m-0 text-[14px] text-ink-500">Noch keine Mails von Konta bekommen.</p>
+			{:else}
+				<ul class="m-0 list-none divide-y divide-ink-100 p-0">
+					{#each data.emails.slice(0, 8) as mail (mail.id)}
+						{@const st = mail.stale
+							? { label: 'Hängt', tone: /** @type {const} */ ('error') }
+							: (EMAIL_STATUS[mail.status] ?? { label: mail.status, tone: 'neutral' })}
+						<li class="flex items-start justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
+							<span class="min-w-0">
+								<span class="block truncate text-[14px] text-ink">{emailTypeLabel(mail.type)}</span>
+								<span class="tnum block text-[12.5px] text-ink-500"
+									>{formatDateTime(mail.sentAt ?? mail.createdAt)}{mail.attempts > 1
+										? ` · ${mail.attempts} Versuche`
+										: ''}</span
+								>
+								{#if mail.error}
+									<span class="block text-[12.5px] break-words text-error">{mail.error}</span>
+								{/if}
+							</span>
+							<Badge tone={st.tone} class="shrink-0">{st.label}</Badge>
+						</li>
+					{/each}
+				</ul>
+				{#if data.emails.length > 8}
+					<p class="m-0 mt-3 text-[12.5px] text-ink-500">
+						{formatNumber(data.emails.length - 8)} weitere im Protokoll.
+					</p>
+				{/if}
 			{/if}
 		</Card>
 
