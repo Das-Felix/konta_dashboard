@@ -50,7 +50,10 @@ function startSession(cookies, admin) {
 		{
 			path: '/',
 			httpOnly: true,
-			sameSite: 'strict',
+			// Lax statt Strict: bei Strict schickt der Browser das Cookie nicht mit,
+			// wenn das Dashboard über einen Link von einer anderen Seite geöffnet
+			// wird. Schutz vor CSRF kommt von der Origin-Prüfung von SvelteKit.
+			sameSite: 'lax',
 			secure: !dev,
 			maxAge: SESSION_MAX_AGE_SECONDS
 		}
