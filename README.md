@@ -95,6 +95,60 @@ Legt rund 190 erfundene Konten mit Belegen, Rechnungen, Logins und
 (`ADMIN_EMAILS="admin@konta.at"`). Das Skript bricht ab, wenn
 `DATABASE_URL` nicht auf localhost zeigt.
 
+## MCP für Claude
+
+Unter `/mcp` läuft ein MCP-Server (Streamable HTTP, zustandslos). Darüber
+sieht Claude dieselben Daten wie du im Dashboard und kann Auswertungen
+machen. Alles nur lesend.
+
+| Tool                | Inhalt                                                                          |
+| ------------------- | ------------------------------------------------------------------------------- |
+| `overview`          | Kennzahlen, Registrierungen und Aktive pro Tag, Funnel, neueste Registrierungen |
+| `list_users`        | Nutzerliste mit Suche, Filter und Sortierung wie unter `/nutzer`                |
+| `get_user`          | Alles zu einem Konto, optional mit OpenPanel-Ereignissen                        |
+| `growth`            | wie `/wachstum`                                                                 |
+| `billing`           | wie `/abos`                                                                     |
+| `usage`             | wie `/nutzung`                                                                  |
+| `emails`            | wie `/mails`                                                                    |
+| `activity`          | wie `/aktivitaet`                                                               |
+| `app_analytics`     | wie `/analytics`, dazu Tagesreihen für frei wählbare Ereignisse                 |
+| `website_analytics` | wie `/landingpage`                                                              |
+| `describe_schema`   | Tabellen, Spalten und Enums der Datenbank                                       |
+| `run_sql`           | freie Abfrage, nur `SELECT`/`WITH`, höchstens 1000 Zeilen                       |
+
+**Einrichten:** `MCP_API_KEY` setzen (mindestens 32 Zeichen,
+`openssl rand -hex 32`). Ohne Key antwortet `/mcp` mit 404.
+
+**Claude Code:**
+
+```sh
+claude mcp add --transport http konta https://<host>/mcp \
+  --header "Authorization: Bearer <MCP_API_KEY>"
+```
+
+**Claude Desktop und claude.ai:** unter Einstellungen > Connectors einen
+Custom Connector mit der URL `https://<host>/mcp?key=<MCP_API_KEY>`
+anlegen. Custom Connectors können keine eigenen Header schicken, deshalb
+steht der Key hier in der URL. Behandle die URL also wie ein Passwort.
+
+**Erreichbarkeit:** Connectors in Claude Desktop und claude.ai rufen den
+Server aus der Cloud von Anthropic auf, nicht von deinem Rechner. Dafür
+muss `/mcp` öffentlich erreichbar sein. Am besten gibst du im Proxy nur
+diesen Pfad frei und lässt den Rest hinter VPN oder IP-Allowlist. Claude
+Code läuft lokal und kommt auch über das VPN an den Server.
+
+**Sicherheit bei `run_sql`:** jede Abfrage läuft in einer eigenen
+Transaktion mit `READ ONLY` und 15 Sekunden Zeitlimit, die immer per
+ROLLBACK endet. Es geht nur eine Anweisung pro Aufruf. Die Tabellen
+`user_tokens` und `two_factor_backup_codes` und die Spalten
+`passwordHash`, `twoFactorSecret`, `tokenHash` und `codeHash` sind gesperrt.
+Das schützt vor Versehen, ist aber keine harte Grenze: die Lese-Rolle
+selbst darf `passwordHash` lesen, weil die Anmeldung am Dashboard das
+braucht. Den API-Key deshalb so sorgfältig behandeln wie ein Admin-Passwort.
+
+Falsche Keys werden pro IP gezählt, nach 20 Fehlversuchen in 15 Minuten
+antwortet `/mcp` mit 429.
+
 ## Betrieb
 
 ```sh

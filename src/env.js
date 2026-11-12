@@ -105,6 +105,15 @@ export const variables = defineEnvVars({
 			'Optional: Projekt-URL der Landingpage im OpenPanel-Dashboard. Aktiviert den Link „In OpenPanel öffnen“.',
 		schema: (value) => optional(value)?.replace(/\/+$/, '')
 	},
+	MCP_API_KEY: {
+		description:
+			'Optional: API-Key für den MCP-Endpunkt /mcp (Claude). Mindestens 32 Zeichen, z. B. `openssl rand -hex 32`. Ohne Wert ist /mcp aus.',
+		schema: (value) => {
+			const key = optional(value);
+			if (key && key.length < 32) throw new Error('MCP_API_KEY ist kürzer als 32 Zeichen.');
+			return key;
+		}
+	},
 	KONTA_APP_URL: {
 		description: 'Optional: URL der Konta-App, z. B. https://app.konta.at',
 		schema: (value) => optional(value)?.replace(/\/+$/, '')

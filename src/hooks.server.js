@@ -1,7 +1,10 @@
 import { SESSION_COOKIE, readSessionToken } from '#lib/server/auth.js';
 
-/** Routen, die ohne Anmeldung erreichbar sind. */
-const PUBLIC_ROUTES = new Set(['/login']);
+/**
+ * Routen, die ohne Session erreichbar sind. `/mcp` prüft selbst einen
+ * API-Key (siehe `routes/mcp/+server.js`).
+ */
+const PUBLIC_ROUTES = new Set(['/login', '/mcp']);
 
 /**
  * @param {import('@sveltejs/kit').RequestEvent} event

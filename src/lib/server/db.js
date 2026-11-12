@@ -67,6 +67,30 @@ export async function queryOne(text, params = []) {
 }
 
 /**
+ * Für fremdes SQL (MCP `run_sql`): eigene Transaktion mit `READ ONLY`, die
+ * immer per ROLLBACK endet. Damit verfallen auch Einstellungen, die eine
+ * Abfrage per `set_config()` ändert, und die Pool-Verbindung bleibt sauber.
+ * Mindestens ein Parameter erzwingt das Extended Protocol, das nur eine
+ * Anweisung pro Aufruf zulässt.
+ *
+ * @param {string} text
+ * @param {[unknown, ...unknown[]]} params
+ * @returns {Promise<Record<string, any>[]>}
+ */
+export async function queryUntrusted(text, params) {
+	const client = await getPool().connect();
+	try {
+		await client.query('BEGIN TRANSACTION READ ONLY');
+		await client.query(`SET LOCAL statement_timeout = 15000`);
+		const result = await client.query(text, params);
+		return result.rows;
+	} finally {
+		await client.query('ROLLBACK').catch(() => {});
+		client.release();
+	}
+}
+
+/**
  * Wandelt eine UTC-Spalte in das Wiener Kalenderdatum um. Alle Tages-
  * auswertungen ("heute", Tagesreihen) zählen nach österreichischer Zeit.
  *

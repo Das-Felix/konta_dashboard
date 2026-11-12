@@ -21,3 +21,8 @@ Internes Dashboard für Konta (siehe README). Liest die Datenbank der Konta-App
   `.text-label` für Eyebrows und Tabellenköpfe, Segmented Controls statt Pillen,
   Diagramm-Reihenfolge `ink` → `violet-700` → `green` → `ink-400` → `ink-200`.
   Du-Form, österreichisches Deutsch, keine Gedankenstriche, nie „KI“.
+- **MCP**: `/mcp` (`src/routes/mcp/+server.js`) gibt Claude per `MCP_API_KEY`
+  dieselben Daten wie das Dashboard. Tools in `src/lib/server/mcp/server.js`
+  sind dünne Hüllen um `src/lib/server/queries/*` und `openpanel.js`. Neue
+  Auswertungen im Dashboard dort als Tool nachziehen. Freies SQL nur über
+  `prepareSql()` + `queryUntrusted()`.
